@@ -5,7 +5,7 @@ ChuangMi IR Remote plugin for HomeBridge.
    
 Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](https://github.com/nfarina/homebridge)), [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol), [aholstenson](https://github.com/aholstenson)(the author of [miio](https://github.com/aholstenson/miio)), all other developer and testers.   
 
-### For Chinese user's wiki: http://homekit.loli.ren
+### For Chinese user's wiki: https://homekit.loli.ren
 
 ## Supported Types
 1.Switch  
