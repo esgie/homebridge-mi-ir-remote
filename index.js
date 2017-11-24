@@ -1,5 +1,6 @@
 require('./Devices/irLearn');
 require('./Devices/MiSwitch');
+require('./Devices/MiCustom');
 require('./Devices/MiLight');
 require('./Devices/MiProjector');
 require('./Devices/MiAirConditioner');
@@ -103,6 +104,10 @@ ChuangmiIRPlatform.prototype = {
                     });
                 } else if (deviceCfg['type'] == "AirConditioner") {
                     new MiAirConditioner(this, deviceCfg).forEach(function(accessory, index, arr){
+                        myAccessories.push(accessory);
+                    });
+                } else if (deviceCfg['type'] == "Custom") {
+                    new MiCustom(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else {

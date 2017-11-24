@@ -5,11 +5,27 @@ ChuangMi IR Remote plugin for HomeBridge.
    
 Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](https://github.com/nfarina/homebridge)), [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol), [aholstenson](https://github.com/aholstenson)(the author of [miio](https://github.com/aholstenson/miio)), all other developer and testers.   
 
+### For Chinese user's wiki: homekit.loli.ren
+
 ## Supported Types
-1.Switch
-2.LightBulb
-3.Projector
-4.Airconditioner
+1.Switch  
+2.LightBulb  
+3.Projector  
+4.Airconditioner  
+5.Custom  
+
+##
+U should active MiLearn from Home app then try to learn each command manually.  
+At the meantime, you are supposed to see the command string come out in the HomeBridge console.  
+Just like:   
+[10/27/2017, 2:39:35 AM] [ChuangmiIRPlatform] [MiIRRemote][irLearn]Learned Code: Z6WDAC8CAAAIBQAAAggAALsiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjAAAAAAAQABAQAAAAAAAAAAAAABAQAAAAEAAAABAAAAAQEAAAEBAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAEBAQAAA=   
+Just grab the string then fill it to config file, everything should be working after u restart HomeBridge.  
+
+### Custom is used for multi-commands. when you want to add a lot of commands in one switch, just use custom. Custom's data is just like a switch.add your commands in on/off like the sample-config. Just like:  
+ "0": "interval|code"
+* Because of the limit of JSON, you have to add "number" as the key of the data.Use it just as the sample below.
+* interval means the time to send the command after you press the on/off switch.Use 0 to send immediately.
+* interval's unit is second. you can use number like 0.5 if you want to send commands within a second.(I don't suggest you set too much commands in a short time.)
 
 ## Installation
 1. Install HomeBridge, please follow it's [README](https://github.com/nfarina/homebridge/blob/master/README.md).   
@@ -82,6 +98,21 @@ npm install -g miio homebridge-mi-ir-remote
                     "16" : "xxx"
                 },
                 "off" : "xxxx"
+            }
+        },{
+            "type": "Custom",
+            "ip": "192.168.31.xx",
+            "token": "xxx",
+            "Name": "Custom",
+            "data": {
+                "on": {
+                    "0": "0|xxx",
+                    "1": "2|xxx",
+                    "2": "5|xxx"
+                },
+                "off": {
+                    "0": "1|xxx"
+                }
             }
         }]
     }]
