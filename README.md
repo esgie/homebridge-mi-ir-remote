@@ -5,7 +5,7 @@ ChuangMi IR Remote plugin for HomeBridge.
    
 Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](https://github.com/nfarina/homebridge)), [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol), [aholstenson](https://github.com/aholstenson)(the author of [miio](https://github.com/aholstenson/miio)), all other developer and testers.   
 
-### For Chinese user's wiki: https://homekit.loli.ren
+### 中文使用者可以查看这个wiki: https://homekit.loli.ren
 
 ## Supported Types
 1.Switch  
@@ -13,6 +13,7 @@ Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](http
 3.Projector  
 4.Airconditioner  
 5.Custom  
+6.MomentarySwitch
 
 ##
 U should active MiLearn from Home app then try to learn each command manually.  
@@ -26,6 +27,8 @@ Just grab the string then fill it to config file, everything should be working a
 * Because of the limit of JSON, you have to add "number" as the key of the data.Use it just as the sample below.
 * interval means the time to send the command after you press the on/off switch.Use 0 to send immediately.
 * interval's unit is second. you can use number like 0.5 if you want to send commands within a second.(I don't suggest you set too much commands in a short time.)
+
+### MomentarySwitch is a switch which will automaticly turn off after you turn on it (0.3s). It is used for some situation like you want to launch a channel on button.
 
 ## Installation
 1. Install HomeBridge, please follow it's [README](https://github.com/nfarina/homebridge/blob/master/README.md).   
@@ -114,6 +117,12 @@ npm install -g miio homebridge-mi-ir-remote
                     "0": "1|xxx"
                 }
             }
+        },{
+                "type": "MomentarySwitch",
+                "ip": "192.168.31.xx",
+                "token": "xxxx",
+                "Name": "Momentary Switch",
+                "data": "xxxxxx"
         }]
     }]
 ```
@@ -139,6 +148,8 @@ miio --discover --sync
 Wait until you get output.   
 For more information about token, please refer to [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol) and [miio](https://github.com/aholstenson/miio).   
 ## Version Logs  
+### 0.0.7  
+1.Support for MomentarySwitch  
 ### 0.0.6  
 1.Support for custom
 ### 0.0.1

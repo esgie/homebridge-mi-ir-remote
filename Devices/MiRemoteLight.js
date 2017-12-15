@@ -4,7 +4,7 @@ const inherits = require('util').inherits;
 const miio = require('miio');
 
 var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
-MiLight = function(platform, config) {
+MiRemoteLight = function(platform, config) {
     this.init(platform, config);
     
     Accessory = platform.Accessory;
@@ -20,7 +20,7 @@ MiLight = function(platform, config) {
     
     this.accessories = {};
     if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['LightAccessory'] = new LightService(this);
+        this.accessories['LightAccessory'] = new MiRemoteLightService(this);
     }
     var accessoriesArr = this.obj2array(this.accessories);
     
@@ -29,9 +29,9 @@ MiLight = function(platform, config) {
     
     return accessoriesArr;
 }
-inherits(MiLight, Base);
+inherits(MiRemoteLight, Base);
 
-LightService = function(dThis) {
+MiRemoteLightService = function(dThis) {
     this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
@@ -41,7 +41,7 @@ LightService = function(dThis) {
     this.brightness = 100;
 }
 
-LightService.prototype.getServices = function() {
+MiRemoteLightService.prototype.getServices = function() {
     var that = this;
     var services = [];
     var tokensan = this.token.substring(this.token.length-8);
@@ -51,9 +51,9 @@ LightService.prototype.getServices = function() {
         .setCharacteristic(Characteristic.Model, "MiIRRemote-Light")
         .setCharacteristic(Characteristic.SerialNumber, tokensan);
     services.push(infoService);   
-    var LightServices = new Service.Lightbulb(this.name);
-    var LightServicesCharacteristic = LightServices.getCharacteristic(Characteristic.On);
-    LightServicesCharacteristic
+    var MiRemoteLightServices = new Service.Lightbulb(this.name);
+    var MiRemoteLightServicesCharacteristic = MiRemoteLightServices.getCharacteristic(Characteristic.On);
+    MiRemoteLightServicesCharacteristic
         .on('set',function(value, callback) {
             if(this.onoffstate == "on" && value){
                 that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: Already On");
@@ -81,7 +81,7 @@ LightService.prototype.getServices = function() {
         .on('get', function(callback) {
             callback(null,this.onoffstate);
         }.bind(this))
-    LightServices
+    MiRemoteLightServices
         .addCharacteristic(Characteristic.Brightness)
         .on('get', function(callback) {
             callback(null, this.brightness);
@@ -126,11 +126,11 @@ LightService.prototype.getServices = function() {
                 that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: Set to " + this.brightness);
                 callback(null, this.brightness);
             }).catch(function(err) {
-                that.platform.log.error("[MiIRRemote][ERROR]Light Error: " + err);
+                that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]Light Error: " + err);
                 callback(err);
             });
         }.bind(this));
     
-    services.push(LightServices);
+    services.push(MiRemoteLightServices);
     return services;
 }

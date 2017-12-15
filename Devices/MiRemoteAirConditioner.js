@@ -4,7 +4,7 @@ const inherits = require('util').inherits;
 const miio = require('miio');
 
 var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
-MiAirConditioner = function(platform, config) {
+MiRemoteAirConditioner = function(platform, config) {
     this.init(platform, config);
     
     Accessory = platform.Accessory;
@@ -20,7 +20,7 @@ MiAirConditioner = function(platform, config) {
     
     this.accessories = {};
     if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['AirConditionerAccessory'] = new AirConditionerService(this);
+        this.accessories['AirConditionerAccessory'] = new MiRemoteAirConditionerService(this);
     }
     var accessoriesArr = this.obj2array(this.accessories);
     
@@ -29,15 +29,15 @@ MiAirConditioner = function(platform, config) {
     
     return accessoriesArr;
 }
-inherits(MiAirConditioner, Base);
+inherits(MiRemoteAirConditioner, Base);
 
-AirConditionerService = function(dThis) {
+MiRemoteAirConditionerService = function(dThis) {
     this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
     this.platform = dThis.platform;
-    this.AirConditionerService;
+    this.MiRemoteAirConditionerService;
     this.minTemperature = dThis.config['MinTemperature'] || 16,
     this.maxTemperature = dThis.config['MaxTemperature'] || 30,
     this.defaultTemperature = dThis.config['DefaultTemperature'] || 26;
@@ -45,7 +45,7 @@ AirConditionerService = function(dThis) {
     this.onoffstate = 0;
 }
 
-AirConditionerService.prototype.getServices = function() {
+MiRemoteAirConditionerService.prototype.getServices = function() {
     var that = this;
     var services = [];
     var tokensan = this.token.substring(this.token.length-8);
@@ -55,23 +55,23 @@ AirConditionerService.prototype.getServices = function() {
         .setCharacteristic(Characteristic.Model, "MiIRRemote-AirConditioner")
         .setCharacteristic(Characteristic.SerialNumber, tokensan);
     services.push(infoService);   
-    var AirConditionerServices = this.AirConditionerService = new Service.Thermostat(this.name, "MiAirConditioner");
-    AirConditionerServices
+    var MiRemoteAirConditionerServices = this.MiRemoteAirConditionerService = new Service.Thermostat(this.name, "MiRemoteAirConditioner");
+    MiRemoteAirConditionerServices
       .getCharacteristic(Characteristic.TargetTemperature)
       .setProps({
         minValue: this.minTemperature,
         maxValue: this.maxTemperature,
         minStep: 1
       });
-    AirConditionerServices
+    MiRemoteAirConditionerServices
       .getCharacteristic(Characteristic.TemperatureDisplayUnits)
       .on('get', (callback) => callback(Characteristic.TemperatureDisplayUnits.CELSIUS));
-    AirConditionerServices
+    MiRemoteAirConditionerServices
         .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
         .on('get', function(callback) {
             callback(null, this.onoffstate);
         }.bind(this))
-    AirConditionerServices
+    MiRemoteAirConditionerServices
         .getCharacteristic(Characteristic.TargetHeatingCoolingState)
         .on('get', function(callback) {
             callback(null, this.onoffstate);
@@ -83,12 +83,12 @@ AirConditionerService.prototype.getServices = function() {
             that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Status " + this.getStatusFrCha(sstatus));
             callback(null, sstatus);
         }.bind(this))
-    AirConditionerServices
+    MiRemoteAirConditionerServices
         .getCharacteristic(Characteristic.CurrentTemperature)
         .on('get', function(callback) {
             callback(null, this.targettem);
         }.bind(this))
-    AirConditionerServices
+    MiRemoteAirConditionerServices
         .getCharacteristic(Characteristic.TargetTemperature)
         .on('get', function(callback) {
             callback(null, this.targettem);
@@ -101,16 +101,16 @@ AirConditionerService.prototype.getServices = function() {
                 tem = value
             }
             this.targettem = tem;
-            this.AirConditionerService.setCharacteristic(Characteristic.CurrentTemperature,tem);
+            this.MiRemoteAirConditionerService.setCharacteristic(Characteristic.CurrentTemperature,tem);
             that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Temperature " + tem);
             callback(null, tem);
         }.bind(this))
         
-    services.push(AirConditionerServices);
+    services.push(MiRemoteAirConditionerServices);
     return services;
 }
 
-AirConditionerService.prototype.SendData = function(state,value) {
+MiRemoteAirConditionerService.prototype.SendData = function(state,value) {
     if(value === null){
         value = this.defaultTemperature;
     }
@@ -127,8 +127,8 @@ AirConditionerService.prototype.SendData = function(state,value) {
             datay = this.data['off'];
             state = 0;
             setTimeout(function() {  
-                this.AirConditionerService.setCharacteristic(Characteristic.CurrentHeatingCoolingState, 0);
-                this.AirConditionerService.setCharacteristic(Characteristic.TargetHeatingCoolingState, 0);
+                this.MiRemoteAirConditionerService.setCharacteristic(Characteristic.CurrentHeatingCoolingState, 0);
+                this.MiRemoteAirConditionerService.setCharacteristic(Characteristic.TargetHeatingCoolingState, 0);
             }.bind(this), 0.6 * 1000);
         }
     }else{
@@ -139,15 +139,16 @@ AirConditionerService.prototype.SendData = function(state,value) {
         this.device.call("miIO.ir_play", {"freq":38400,"code":datay}).then(result => {
             that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Send Success");
         }).catch(function(err) {
-            that.platform.log.error("[MiIRRemote][ERROR]AirConditioner Error: " + err);
+            that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]AirConditioner Error: " + err);
             state = this.onoffstate;
+            callback(err);
         });
     }
     var temm = datas['tem'] || value;
     return {"state" : state, "tem" : temm};
 }
 
-AirConditionerService.prototype.GetDataString = function(dataa,value){
+MiRemoteAirConditionerService.prototype.GetDataString = function(dataa,value){
     var that = this;
     var returnkey = this.targettem;
     if(dataa[value]){
@@ -184,7 +185,7 @@ AirConditionerService.prototype.GetDataString = function(dataa,value){
     return {"data" : dataa[returnkey], "tem" : returnkey};
 }
 
-AirConditionerService.prototype.getStatusFrCha = function(state) {
+MiRemoteAirConditionerService.prototype.getStatusFrCha = function(state) {
     switch (state) {
       case Characteristic.TargetHeatingCoolingState.AUTO:
         return 'Auto';

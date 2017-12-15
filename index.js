@@ -1,9 +1,10 @@
-require('./Devices/irLearn');
-require('./Devices/MiSwitch');
-require('./Devices/MiCustom');
-require('./Devices/MiLight');
-require('./Devices/MiProjector');
-require('./Devices/MiAirConditioner');
+require('./Devices/MiRemoteirLearn');
+require('./Devices/MiRemoteSwitch');
+require('./Devices/MiRemoteCustom');
+require('./Devices/MiRemoteLight');
+require('./Devices/MiRemoteProjector');
+require('./Devices/MiRemoteAirConditioner');
+require('./Devices/MiRemoteMomentarySwitch');
 
 var fs = require('fs');
 var packageFile = require("./package.json");
@@ -77,7 +78,7 @@ ChuangmiIRPlatform.prototype = {
     accessories: function(callback) {
         var myAccessories = [];
         if(this.config['hidelearn'] == false){
-            new irLearn(this, this.config['learnconfig']).forEach(function(accessory, index, arr){
+            new MiRemoteirLearn(this, this.config['learnconfig']).forEach(function(accessory, index, arr){
                 myAccessories.push(accessory);
             });
         }
@@ -91,27 +92,34 @@ ChuangmiIRPlatform.prototype = {
                 }
                 
                 if (deviceCfg['type'] == "Switch") {
-                    new MiSwitch(this, deviceCfg).forEach(function(accessory, index, arr){
+                    new MiRemoteSwitch(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else if (deviceCfg['type'] == "Light") {
-                    new MiLight(this, deviceCfg).forEach(function(accessory, index, arr){
+                    new MiRemoteLight(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else if (deviceCfg['type'] == "Projector") {
-                    new MiProjector(this, deviceCfg).forEach(function(accessory, index, arr){
+                    new MiRemoteProjector(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else if (deviceCfg['type'] == "AirConditioner") {
-                    new MiAirConditioner(this, deviceCfg).forEach(function(accessory, index, arr){
+                    new MiRemoteAirConditioner(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else if (deviceCfg['type'] == "Custom") {
-                    new MiCustom(this, deviceCfg).forEach(function(accessory, index, arr){
+                    new MiRemoteCustom(this, deviceCfg).forEach(function(accessory, index, arr){
+                        myAccessories.push(accessory);
+                    });
+                } else if (deviceCfg['type'] == "MomentarySwitch") {
+                    new MiRemoteMomentarySwitch(this, deviceCfg).forEach(function(accessory, index, arr){
                         myAccessories.push(accessory);
                     });
                 } else {
+                    this.log.error("[MiIRRemote][ERROR]device type: " + eviceCfg['type'] + "Unisset!");
                 }
+
+                
             }
             this.log.info("[MiIRRemote][INFO]device size: " + deviceCfgs.length + ", accessories size: " + myAccessories.length);
         }
