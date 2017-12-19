@@ -70,6 +70,8 @@ MiRemoteMomentarySwitchService.prototype.getServices = function() {
                         that.platform.log.error("[MiIRRemote][" + that.name + "][Custom][ERROR] Error: " + err);
                         callback(err);
                     });
+                }else{
+                    callback(null);
                 }
             }catch(err) {
                 that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]MomentarySwitch Error: " + err);
