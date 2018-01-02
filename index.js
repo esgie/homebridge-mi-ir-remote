@@ -66,9 +66,10 @@ function ChuangmiIRPlatform(log, config, api) {
     
     
     this.log.info("[MiIRRemote][INFO]*********************************************************************");
-    this.log.info("[MiIRRemote][INFO]                           MiIRRemote v%s                        *",packageFile.version);
-    this.log.info("[MiIRRemote][INFO] GitHub: https://github.com/Zzm317/homebridge-mi-ir-remote          *");
-    this.log.info("[MiIRRemote][INFO]                                                                    *");
+    this.log.info("[MiIRRemote][INFO]*                          MiIRRemote v%s                       *",packageFile.version);
+    this.log.info("[MiIRRemote][INFO]*    GitHub: https://github.com/Zzm317/homebridge-mi-ir-remote      *");
+    this.log.info("[MiIRRemote][INFO]*                        QQ Group:545171648                         *");
+    this.log.info("[MiIRRemote][INFO]*    Telegram Group:https://t.me/joinchat/EujYfA-JKSwpRlXURD1t6g    *");
     this.log.info("[MiIRRemote][INFO]*********************************************************************");
     this.log.info("[MiIRRemote][INFO]start success...");
     

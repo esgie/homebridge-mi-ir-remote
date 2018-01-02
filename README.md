@@ -5,7 +5,17 @@ ChuangMi IR Remote plugin for HomeBridge.
    
 Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](https://github.com/nfarina/homebridge)), [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol), [aholstenson](https://github.com/aholstenson)(the author of [miio](https://github.com/aholstenson/miio)), all other developer and testers.   
 
-### 中文使用者可以查看这个wiki: https://homekit.loli.ren
+欢迎加入我们的QQ群 545171648 讨论  
+QQ Group:545171648  
+Telegram Group: https://t.me/joinchat/EujYfA-JKSwpRlXURD1t6g
+
+## Installation
+1. Install HomeBridge, please follow it's [README](https://github.com/nfarina/homebridge/blob/master/README.md).   
+If you are using Raspberry Pi, please read [Running-HomeBridge-on-a-Raspberry-Pi](https://github.com/nfarina/homebridge/wiki/Running-HomeBridge-on-a-Raspberry-Pi).   
+如果你能阅读中文,你可以阅读 [homekit非官方安装指南](https://homekit.loli.ren).
+2. Make sure you can see HomeBridge in your iOS devices, if not, please go back to step 1.   
+3. Install packages.   
+4. Install Plugin.
 
 ## Supported Types
 1.Switch  
@@ -148,9 +158,11 @@ miio --discover --sync
 Wait until you get output.   
 For more information about token, please refer to [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol) and [miio](https://github.com/aholstenson/miio).   
 ## Version Logs  
+### 0.0.10
+1. Add QQ and Telegram group link
 ### 0.0.7  
-1.Support for MomentarySwitch  
+1. Support for MomentarySwitch  
 ### 0.0.6  
-1.Support for custom
+1. Support for custom
 ### 0.0.1
-1.support for Switch and IRlearn.  
+1. support for Switch and IRlearn.  
