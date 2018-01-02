@@ -12,7 +12,7 @@ Telegram Group: https://t.me/joinchat/EujYfA-JKSwpRlXURD1t6g
 ## Installation
 1. Install HomeBridge, please follow it's [README](https://github.com/nfarina/homebridge/blob/master/README.md).   
 If you are using Raspberry Pi, please read [Running-HomeBridge-on-a-Raspberry-Pi](https://github.com/nfarina/homebridge/wiki/Running-HomeBridge-on-a-Raspberry-Pi).   
-如果你能阅读中文,你可以阅读 [homekit非官方安装指南](https://homekit.loli.ren).
+如果你能阅读中文,你可以阅读 [homebridge非官方安装指南](https://homekit.loli.ren).
 2. Make sure you can see HomeBridge in your iOS devices, if not, please go back to step 1.   
 3. Install packages.   
 4. Install Plugin.
