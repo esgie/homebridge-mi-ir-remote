@@ -1,42 +1,30 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteAirConditioner = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[MiRemoteAirConditioner]Initializing MiRemoteAirConditioner: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['AirConditionerAccessory'] = new MiRemoteAirConditionerService(this);
-    }
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][DEBUG]Initializing " + this.config["type"] + " device: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteAirConditionerService(this);
 }
-inherits(MiRemoteAirConditioner, Base);
 
 MiRemoteAirConditionerService = function(dThis) {
-    this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
     this.platform = dThis.platform;
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+    
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     this.MiRemoteAirConditionerService;
     this.minTemperature = dThis.config['MinTemperature'] || 16,
     this.maxTemperature = dThis.config['MaxTemperature'] || 30,
@@ -80,7 +68,7 @@ MiRemoteAirConditionerService.prototype.getServices = function() {
             var sstatus = this.SendData(value,this.targettem);
             sstatus = sstatus["state"];
             this.onoffstate = sstatus;
-            that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Status " + this.getStatusFrCha(sstatus));
+            that.platform.log.debug("[" + this.name + "]AirConditioner: Status " + this.getStatusFrCha(sstatus));
             callback(null, sstatus);
         }.bind(this))
     MiRemoteAirConditionerServices
@@ -102,7 +90,7 @@ MiRemoteAirConditionerService.prototype.getServices = function() {
             }
             this.targettem = tem;
             this.MiRemoteAirConditionerService.setCharacteristic(Characteristic.CurrentTemperature,tem);
-            that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Temperature " + tem);
+            that.platform.log.debug("[" + this.name + "]AirConditioner: Temperature " + tem);
             callback(null, tem);
         }.bind(this))
         
@@ -135,14 +123,16 @@ MiRemoteAirConditionerService.prototype.SendData = function(state,value) {
         datas = this.GetDataString(this.data[sstatus],value);
         var datay = datas['data'];
     }
-    if(datay !== ""){
+    if(datay !== "" && this.readydevice){
         this.device.call("miIO.ir_play", {"freq":38400,"code":datay}).then(result => {
-            that.platform.log.debug("[MiIRRemote][" + this.name + "]AirConditioner: Send Success");
+            that.platform.log.debug("[" + this.name + "]AirConditioner: Send Success");
         }).catch(function(err) {
-            that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]AirConditioner Error: " + err);
+            that.platform.log.error("[" + this.name + "][ERROR]AirConditioner Error: " + err);
             state = this.onoffstate;
             callback(err);
         });
+    }else{
+        that.platform.log.info("[" + this.name + "]AirConditioner: Unready");
     }
     var temm = datas['tem'] || value;
     return {"state" : state, "tem" : temm};
@@ -176,10 +166,10 @@ MiRemoteAirConditionerService.prototype.GetDataString = function(dataa,value){
             }else{
                 returnkey = max;
             }
-            that.platform.log.error("[MiIRRemote][" + this.name + "]AirConditioner: Illegal Temperature, Unisset: " + value + " Use " + returnkey + " instead"); 
+            that.platform.log.error("[" + this.name + "]AirConditioner: Illegal Temperature, Unisset: " + value + " Use " + returnkey + " instead"); 
         }else{ 
             returnkey = this.defaultTemperature;
-            that.platform.log.error("[MiIRRemote][" + this.name + "]AirConditioner: Illegal Temperature, Unisset: " + value + " Use " + returnkey + " instead");      
+            that.platform.log.error("[" + this.name + "]AirConditioner: Illegal Temperature, Unisset: " + value + " Use " + returnkey + " instead");      
         }
     }
     return {"data" : dataa[returnkey], "tem" : returnkey};

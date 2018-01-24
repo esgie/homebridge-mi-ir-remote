@@ -1,38 +1,15 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteCustom = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[MiRemoteCustom]Initializing MiRemoteCustom: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['ProjectorAccessory'] = new MiRemoteCustomService(this);
-    }
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][DEBUG]Initializing " + this.config["type"] + " device: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteCustomService(this);
 }
-inherits(MiRemoteCustom, Base);
 
 MiRemoteCustomService = function(dThis) {
-    this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
@@ -40,6 +17,17 @@ MiRemoteCustomService = function(dThis) {
     if(!this.interval){
         this.interval = 1;
     }
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     this.platform = dThis.platform;
     this.onoffstate = false;
 }
@@ -59,29 +47,33 @@ MiRemoteCustomService.prototype.getServices = function() {
     MiRemoteCustomServicesCharacteristic
         .on('set',function(value, callback) {
             try{
-                var onoff = value ? "on" : "off";
-                this.onoffstate = value;
-                var onoffdata = this.data[onoff];
-                for (var i in onoffdata) {
-                    var dataa = onoffdata[i];
-                    var arra = dataa.split('|');
-                    var duetime = arra[0];
-                    var code = arra[1];
-                    setTimeout(function(code,onoff,i,duetime) {
-                        that.device.call("miIO.ir_play", {"freq":38400,"code":code}).then(result => {
-                            that.platform.log.debug("[MiIRRemote][" + that.name + "]Custom: Send " + onoff + " - " + i + " interval:" + duetime);
-                        }).catch(function(err) {
-                            if(err == "Error: Call to device timed out"){
-                                that.platform.log.debug("[MiIRRemote][" + this.name + "][ERROR]Custom - Remote Offline");
-                            }else{
-                                that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]Custom Error: " + err);
-                            }
-                        });
-                    },duetime * 1000,code,onoff,i,duetime)    
+                if(this.readydevice){
+                    var onoff = value ? "on" : "off";
+                    this.onoffstate = value;
+                    var onoffdata = this.data[onoff];
+                    for (var i in onoffdata) {
+                        var dataa = onoffdata[i];
+                        var arra = dataa.split('|');
+                        var duetime = arra[0];
+                        var code = arra[1];
+                        setTimeout(function(code,onoff,i,duetime) {
+                            that.device.call("miIO.ir_play", {"freq":38400,"code":code}).then(result => {
+                                that.platform.log.debug("[" + that.name + "]Custom: Send " + onoff + " - " + i + " interval:" + duetime);
+                            }).catch(function(err) {
+                                if(err == "Error: Call to device timed out"){
+                                    that.platform.log.debug("[" + this.name + "][ERROR]Custom - Remote Offline");
+                                }else{
+                                    that.platform.log.error("[" + this.name + "][ERROR]Custom Error: " + err);
+                                }
+                            });
+                        },duetime * 1000,code,onoff,i,duetime)    
+                    }
+                }else{
+                   that.platform.log.info("[" + this.name + "][ERROR]Custom - Unready");
                 }
                 callback(null);
             }catch(err) {
-                that.platform.log.error("[MiIRRemote][General][ERROR]Custom Error: " + err);
+                that.platform.log.error("[General][ERROR]Custom Error: " + err);
                 callback(err);
             }
         }.bind(this))

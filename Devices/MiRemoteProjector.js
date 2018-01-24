@@ -1,42 +1,30 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteProjector = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[MiRemoteProjector]Initializing MiRemoteProjector: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['ProjectorAccessory'] = new MiRemoteProjectorService(this);
-    }
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][DEBUG]Initializing " + this.config["type"] + " device: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteProjectorService(this);
 }
-inherits(MiRemoteProjector, Base);
 
 MiRemoteProjectorService = function(dThis) {
-    this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
     this.interval = dThis.config['interval'];
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+    
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     if(!this.interval){
         this.interval = 1;
     }
@@ -58,24 +46,29 @@ MiRemoteProjectorService.prototype.getServices = function() {
     var MiRemoteProjectorServicesCharacteristic = MiRemoteProjectorServices.getCharacteristic(Characteristic.On);
     MiRemoteProjectorServicesCharacteristic
         .on('set',function(value, callback) {
-            var onoff = value ? "on" : "off";
-            this.onoffstate = value;
-            if(!value){
-                setTimeout(function() {  
-                    this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[onoff]}).then(result => {
-                        that.platform.log.debug("[MiIRRemote][" + this.name + "]Projector: Second " + onoff);
-                    }).catch(function(err) {
-                        that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]Projector Error: " + err);
-                    });
-                }.bind(this), this.interval * 1000);
-            }
-            this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[onoff]}).then(result => {
-                that.platform.log.debug("[MiIRRemote][" + this.name + "]Projector: " + onoff);
+            if(this.readydevice){
+                var onoff = value ? "on" : "off";
+                this.onoffstate = value;
+                if(!value){
+                    setTimeout(function() {  
+                        this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[onoff]}).then(result => {
+                            that.platform.log.debug("[" + this.name + "]Projector: Second " + onoff);
+                        }).catch(function(err) {
+                            that.platform.log.error("[" + this.name + "][ERROR]Projector Error: " + err);
+                        });
+                    }.bind(this), this.interval * 1000);
+                }
+                this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[onoff]}).then(result => {
+                    that.platform.log.debug("[" + this.name + "]Projector: " + onoff);
+                    callback(null);
+                }).catch(function(err) {
+                    that.platform.log.error("[" + this.name + "][ERROR]Projector Error: " + err);
+                    callback(err);
+                });
+            }else{
+                that.platform.log.info("[" + this.name + "]Projector: Unready");
                 callback(null);
-            }).catch(function(err) {
-                that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]Projector Error: " + err);
-                callback(err);
-            });
+            }
         }.bind(this))
         .on('get', function(callback) {
             callback(null,this.onoffstate);

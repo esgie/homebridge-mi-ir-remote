@@ -1,39 +1,29 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteirLearn = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[irLearn][DEBUG]Initializing learn: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    this.accessories['RemoteAccessory'] = new MiRemoteirLearnButton(this);
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][irLearn][DEBUG]Initializing learn: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteirLearnButton(this);
 }
-inherits(MiRemoteirLearn, Base);
 
 MiRemoteirLearnButton = function(dThis) {
-    this.device = dThis.device;
     this.name = "MiLearn";
     this.token = dThis.config['token'];
     this.platform = dThis.platform;
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     this.updatetimere = false;
     this.timer;
     this.upt;
@@ -55,7 +45,7 @@ MiRemoteirLearnButton.prototype.getServices = function() {
     var MiRemoteirLearnButtonOnCharacteristic = MiRemoteirLearnButtonService.getCharacteristic(Characteristic.On);
     MiRemoteirLearnButtonOnCharacteristic
         .on('set',function(value, callback) {
-            this.platform.log.info("[MiIRRemote][irLearn] Learn Started");
+            this.platform.log.info("[irLearn] Learn Started");
             if(value == true){
                 this.updatetimere = true;
                 this.upt = 5;
@@ -72,12 +62,17 @@ MiRemoteirLearnButton.prototype.getServices = function() {
 }
 
 MiRemoteirLearnButton.prototype.updateTimer = function() {
-    if (this.updatetimere) {
+    if (this.updatetimere && this.readydevice) {
         clearTimeout(this.timer);
         this.timer = setTimeout(function() {
             this.runTimer();
             this.updateTimer();
         }.bind(this), 1 * 1000);
+    }else{
+        this.platform.log.info("[irLearn] Learn Failed, Status Unready");
+        setTimeout(function() {
+            this.MiRemoteirLearnService.getCharacteristic(Characteristic.On).updateValue(false);
+        }.bind(this), 3 * 100);
     }
 }
 
@@ -87,39 +82,39 @@ MiRemoteirLearnButton.prototype.runTimer = function() {
     if(this.upt <= 0){
         this.updatetimere = false;
         this.MiRemoteirLearnService.getCharacteristic(Characteristic.On).updateValue(false);
-        that.platform.log.info("[MiIRRemote][irLearn] Learn Stopped");
+        that.platform.log.info("[irLearn] Learn Stopped");
     }else{
         this.timekey = "123456789012345";
         if(this.upt == 4){
             this.device.call("miIO.ir_learn", {"key":this.timekey}).then(result => {
-                that.platform.log.info("[MiIRRemote][irLearn]irLearn Waiting...");
+                that.platform.log.info("[irLearn]irLearn Waiting...");
             }).catch(function(err) {
                 if(err == "Error: Call to device timed out"){
-                    that.platform.log.debug("[MiIRRemote][ERROR]irLearn - Remote Offline");
+                    that.platform.log.debug("[ERROR]irLearn - Remote Offline");
                 }else{
-                    that.platform.log.debug("[MiIRRemote][irLearn][ERROR] Error: " + err);
+                    that.platform.log.debug("[irLearn][ERROR] Error: " + err);
                 }
             });
         }else{
             this.device.call("miIO.ir_read", {"key":this.timekey}).then(result => {
                 if(result['code'] !== ""){
-                    that.platform.log.info("[MiIRRemote][irLearn]Learned Code: " + result['code']);
+                    that.platform.log.info("[irLearn]Learned Code: " + result['code']);
                     this.updatetimere = false;
                     this.upt = 0;
                     this.MiRemoteirLearnService.getCharacteristic(Characteristic.On).updateValue(false);
-                    that.platform.log.info("[MiIRRemote][irLearn] Learn Success!");
+                    that.platform.log.info("[irLearn] Learn Success!");
                 }else{
-                    that.platform.log.debug("[MiIRRemote][irLearn][DEBUG]Learn Waiting...");
+                    that.platform.log.debug("[irLearn][DEBUG]Learn Waiting...");
                 }
             }).catch(function(err) {
                 if(err == "Error: Call to device timed out"){
-                    that.platform.log.debug("[MiIRRemote][ERROR]irLearn - Remote Offline");
+                    that.platform.log.debug("[ERROR]irLearn - Remote Offline");
                 }else{
-                    that.platform.log.error("[MiIRRemote][irLearn][ERROR] Error: " + err);
+                    that.platform.log.error("[irLearn][ERROR] Error: " + err);
                 }
                 callback(err);
             });
         }
-        that.platform.log.debug("[MiIRRemote][irLearn] " + this.upt + " Seconds left");
+        that.platform.log.debug("[irLearn] " + this.upt + " Seconds left");
     }
 }

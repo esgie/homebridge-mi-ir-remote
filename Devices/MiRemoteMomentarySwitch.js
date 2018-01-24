@@ -1,42 +1,30 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteMomentarySwitch = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[MomentarySwitch]Initializing MomentarySwitch: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['ProjectorAccessory'] = new MiRemoteMomentarySwitchService(this);
-    }
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][DEBUG]Initializing " + this.config["type"] + " device: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteMomentarySwitchService(this);
 }
-inherits(MiRemoteMomentarySwitch, Base);
 
 MiRemoteMomentarySwitchService = function(dThis) {
-    this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
     this.platform = dThis.platform;
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     this.onoffstate = false;
     this.SwitchStatus;
 }
@@ -56,25 +44,30 @@ MiRemoteMomentarySwitchService.prototype.getServices = function() {
     MiRemoteMomentarySwitchServicesCharacteristic
         .on('set',function(value, callback) {
             try{
-                if(value){
+                if(value && this.readydevice){
                     var codedata = this.data;
                     that.device.call("miIO.ir_play", {"freq":38400,"code":codedata}).then(result => {
-                        that.platform.log.debug("[MiIRRemote][" + that.name + "]MomentarySwitch: Turned On");
+                        that.platform.log.debug("[" + that.name + "]MomentarySwitch: Turned On");
                         setTimeout(function() {
                             that.SwitchStatus.getCharacteristic(Characteristic.On).updateValue(false);
                             that.onoffstate = false;
-                            that.platform.log.debug("[MiIRRemote][" + that.name + "]MomentarySwitch: Auto Turned Off");
+                            that.platform.log.debug("[" + that.name + "]MomentarySwitch: Auto Turned Off");
                         },0.3 * 1000)
                         callback(null);
                     }).catch(function(err) {
-                        that.platform.log.error("[MiIRRemote][" + that.name + "][Custom][ERROR] Error: " + err);
+                        that.platform.log.error("[" + that.name + "][Custom][ERROR] Error: " + err);
                         callback(err);
                     });
                 }else{
+                    setTimeout(function() {
+                            that.SwitchStatus.getCharacteristic(Characteristic.On).updateValue(false);
+                            that.onoffstate = false;
+                            that.platform.log.info("[" + that.name + "]MomentarySwitch: Unready Turned Off");
+                        },0.3 * 1000)
                     callback(null);
                 }
             }catch(err) {
-                that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]MomentarySwitch Error: " + err);
+                that.platform.log.error("[" + this.name + "][ERROR]MomentarySwitch Error: " + err);
                 callback(err);
             }
         }.bind(this))

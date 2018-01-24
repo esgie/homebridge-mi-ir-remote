@@ -2,8 +2,6 @@
 [![npm version](https://badge.fury.io/js/homebridge-mi-ir-remote.svg)](https://badge.fury.io/js/homebridge-mi-ir-remote)
 
 ChuangMi IR Remote plugin for HomeBridge.   
-   
-Thanks for [nfarina](https://github.com/nfarina)(the author of [homebridge](https://github.com/nfarina/homebridge)), [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol), [aholstenson](https://github.com/aholstenson)(the author of [miio](https://github.com/aholstenson/miio)), all other developer and testers.   
 
 欢迎加入我们的QQ群 545171648 讨论  
 QQ Group:545171648  
@@ -155,9 +153,13 @@ Run following command:
 ```
 miio --discover --sync
 ```
-Wait until you get output.   
-For more information about token, please refer to [OpenMiHome](https://github.com/OpenMiHome/mihome-binary-protocol) and [miio](https://github.com/aholstenson/miio).   
+Wait until you get output.  
+Or you can try to get Your token from any rootrd android device.  
+Details in https://github.com/jghaanstra/com.xiaomi-miio/blob/master/docs/obtain_token.md
+
 ## Version Logs  
+### 0.1.0
+1. Rewrite the plugin and added support for both miio.Device and miio.device.
 ### 0.0.10
 1. Add QQ and Telegram group link
 ### 0.0.7  

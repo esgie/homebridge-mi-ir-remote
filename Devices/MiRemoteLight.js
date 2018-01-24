@@ -1,42 +1,30 @@
-require('./Base');
+var Service,Characteristic;
 
-const inherits = require('util').inherits;
-const miio = require('miio');
-
-var Accessory, PlatformAccessory, Service, Characteristic, UUIDGen;
 MiRemoteLight = function(platform, config) {
-    this.init(platform, config);
+    this.platform = platform;
+    this.config = config;
+
+    this.platform.log.debug("[MiRemoteLight]Initializing MiRemoteLight: " + this.config["ip"]);
     
-    Accessory = platform.Accessory;
-    PlatformAccessory = platform.PlatformAccessory;
-    Service = platform.Service;
-    Characteristic = platform.Characteristic;
-    UUIDGen = platform.UUIDGen;
-    
-    this.device = new miio.Device({
-        address: this.config['ip'],
-        token: this.config['token']
-    });
-    
-    this.accessories = {};
-    if(this.config['Name'] && this.config['Name'] != "") {
-        this.accessories['LightAccessory'] = new MiRemoteLightService(this);
-    }
-    var accessoriesArr = this.obj2array(this.accessories);
-    
-    this.platform.log.debug("[MiIRRemote][DEBUG]Initializing " + this.config["type"] + " device: " + this.config["ip"] + ", accessories size: " + accessoriesArr.length);
-    
-    
-    return accessoriesArr;
+    return new MiRemoteLightService(this);
 }
-inherits(MiRemoteLight, Base);
 
 MiRemoteLightService = function(dThis) {
-    this.device = dThis.device;
     this.name = dThis.config['Name'];
     this.token = dThis.config['token'];
     this.data = dThis.config['data'];
     this.platform = dThis.platform;
+
+    this.readydevice = false;
+    var configarray = {
+        address: dThis.config['ip'],
+        token: dThis.config['token']
+    };
+    this.device = dThis.platform.getMiioDevice(configarray,this);
+
+    Service = dThis.platform.HomebridgeAPI.hap.Service;
+    Characteristic = dThis.platform.HomebridgeAPI.hap.Characteristic;
+
     this.onoffstate = false;
     this.brightness = 100;
 }
@@ -55,27 +43,32 @@ MiRemoteLightService.prototype.getServices = function() {
     var MiRemoteLightServicesCharacteristic = MiRemoteLightServices.getCharacteristic(Characteristic.On);
     MiRemoteLightServicesCharacteristic
         .on('set',function(value, callback) {
-            if(this.onoffstate == "on" && value){
-                that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: Already On");
+            if(this.readydevice){
+                if(this.onoffstate == "on" && value){
+                    that.platform.log.debug("[" + this.name + "]Light: Already On");
+                    callback(null);
+                }else if(this.onoffstate == "off" && value){
+                    this.onoffstate = value ? "on" : "off";
+                    this.device.call("miIO.ir_play", {"freq":38400,"code":this.data["100"]}).then(result => {
+                        that.platform.log.debug("[" + this.name + "]Light: 100");
+                        callback(null);
+                    }).catch(function(err) {
+                        that.platform.log.error("[ERROR]Light Error: " + err);
+                        callback(err);
+                    });
+                }else{   
+                    this.onoffstate = value ? "on" : "off";
+                    this.device.call("miIO.ir_play", {"freq":38400,"code":this.data["off"]}).then(result => {
+                        that.platform.log.debug("[" + this.name + "]Light: Off");
+                        callback(null);
+                    }).catch(function(err) {
+                        that.platform.log.error("[ERROR]Light Error: " + err);
+                        callback(err);
+                    });
+                }
+            }else{
+                that.platform.log.info("[" + this.name + "]Light: Unready");
                 callback(null);
-            }else if(this.onoffstate == "off" && value){
-                this.onoffstate = value ? "on" : "off";
-                this.device.call("miIO.ir_play", {"freq":38400,"code":this.data["100"]}).then(result => {
-                    that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: 100");
-                    callback(null);
-                }).catch(function(err) {
-                    that.platform.log.error("[MiIRRemote][ERROR]Light Error: " + err);
-                    callback(err);
-                });
-            }else{   
-                this.onoffstate = value ? "on" : "off";
-                this.device.call("miIO.ir_play", {"freq":38400,"code":this.data["off"]}).then(result => {
-                    that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: Off");
-                    callback(null);
-                }).catch(function(err) {
-                    that.platform.log.error("[MiIRRemote][ERROR]Light Error: " + err);
-                    callback(err);
-                });
             }
         }.bind(this))
         .on('get', function(callback) {
@@ -116,19 +109,24 @@ MiRemoteLightService.prototype.getServices = function() {
                     }else{
                         this.brightness = brightne = max;
                     }
-                    that.platform.log.error("[MiIRRemote][" + this.name + "]Light: Illegal Brightness, Unisset: " + value + " Use " + brightne + " instead"); 
+                    that.platform.log.error("[" + this.name + "]Light: Illegal Brightness, Unisset: " + value + " Use " + brightne + " instead"); 
                 }else{ 
                     this.brightness = brightne = 100;
-                    that.platform.log.error("[MiIRRemote][" + this.name + "]Light: Illegal Brightness, Unisset: " + value + " Use " + brightne + " instead");      
+                    that.platform.log.error("[" + this.name + "]Light: Illegal Brightness, Unisset: " + value + " Use " + brightne + " instead");      
                 }
             }
-            this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[brightne]}).then(result => { 
-                that.platform.log.debug("[MiIRRemote][" + this.name + "]Light: Set to " + this.brightness);
-                callback(null, this.brightness);
-            }).catch(function(err) {
-                that.platform.log.error("[MiIRRemote][" + this.name + "][ERROR]Light Error: " + err);
-                callback(err);
-            });
+            if(this.readydevice){
+                this.device.call("miIO.ir_play", {"freq":38400,"code":this.data[brightne]}).then(result => { 
+                    that.platform.log.debug("[" + this.name + "]Light: Set to " + this.brightness);
+                    callback(null, this.brightness);
+                }).catch(function(err) {
+                    that.platform.log.error("[" + this.name + "][ERROR]Light Error: " + err);
+                    callback(err);
+                });
+            }else{
+                that.platform.log.info("[" + this.name + "]Light: Unready");
+                callback(null);
+            } 
         }.bind(this));
     
     services.push(MiRemoteLightServices);
