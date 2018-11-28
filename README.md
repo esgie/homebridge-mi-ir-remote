@@ -134,6 +134,68 @@ npm install -g miio homebridge-mi-ir-remote
         }]
     }]
 ```
+You can also set IP and token globally so that you won't need to set it for each button.
+```
+"platforms": [
+    {
+        "platform": "ChuangmiIRPlatform",
+        "ip": "192.168.31.xx",
+        "token": "xxxxxxx",
+        "hidelearn": false,
+        "deviceCfgs": [
+            {
+                "type": "Switch",
+                "Name": "IR Switch",
+                "data": {
+                    "on" : "xxxxxxx",
+                    "off": "xxxxxxx"
+                }
+            },
+            {
+                "type": "Projector",
+                "Name": "IR Projector",
+                "interval": 1,
+                "data": {
+                    "on" : "xxxxxxxxxxxxx",
+                    "off": "xxxxxxxxxxxxx"
+                }
+            }
+        ]
+    }
+]
+```
+In case you need specific commands to go via different IR Remote Control device, you can customize IP and token inside needed command configuration. In following example IR Projector will use global IP `192.168.31.xx` and token `xxxxxxx` while IR Switch will use IP `192.168.31.zz` and token `zzzzzzz`.
+```
+"platforms": [
+    {
+        "platform": "ChuangmiIRPlatform",
+        "ip": "192.168.31.xx",
+        "token": "xxxxxxx",
+        "hidelearn": false,
+        "deviceCfgs": [
+            {
+                "type": "Switch",
+                "ip": "192.168.31.zz",
+                "token": "zzzzzzz",
+                "Name": "IR Switch",
+                "data": {
+                    "on" : "xxxxxxx",
+                    "off": "xxxxxxx"
+                }
+            },
+            {
+                "type": "Projector",
+                "Name": "IR Projector",
+                "interval": 1,
+                "data": {
+                    "on" : "xxxxxxxxxxxxx",
+                    "off": "xxxxxxxxxxxxx"
+                }
+            }
+        ]
+    }
+]
+```
 ## Get token
 Open command prompt or terminal. Run following command:
 ```
@@ -158,6 +220,8 @@ Or you can try to get Your token from any rootrd android device.
 Details in https://github.com/jghaanstra/com.xiaomi-miio/blob/master/docs/obtain_token.md
 
 ## Version Logs  
+### 0.1.1
+1. Implement global ip and token settings in config
 ### 0.1.0
 1. Rewrite the plugin and added support for both miio.Device and miio.device.
 ### 0.0.10

@@ -55,54 +55,68 @@ function ChuangmiIRPlatform(log, config, api) {
     
 }
 
-ChuangmiIRPlatform.prototype.accessories = function(callback) {
+ChuangmiIRPlatform.prototype.accessories = function (callback) {
     var LoadedAccessories = [];
-        if(this.config['hidelearn'] == false){
-            LoadedAccessories.push(new MiRemoteirLearn(this, this.config['learnconfig']));
+    var deviceCfgs = [];
+    var deviceCfg;
+
+    if (this.config['hidelearn'] == false) {
+        this.config['learnconfig'] = this.config['learnconfig'] || [];
+        this.config['learnconfig']['type'] = 'Learn';
+        deviceCfgs.push(this.config['learnconfig']);
+    }
+
+    if (this.config['deviceCfgs'] instanceof Array) {
+        deviceCfgs = deviceCfgs.concat(this.config['deviceCfgs']);
+    }
+
+    for (var i = 0; i < deviceCfgs.length; i++) {
+        deviceCfg = deviceCfgs[i];
+
+        if (deviceCfg['ip'] == null || deviceCfg['ip'] === '' || deviceCfg['token'] == null || deviceCfg['token'] === '') {
+            deviceCfg['ip'] = this.config['ip'];
+            deviceCfg['token'] = this.config['token'];
         }
-        var deviceCfgs = this.config['deviceCfgs'];
-        
-        if(deviceCfgs instanceof Array) {
-            for (var i = 0; i < deviceCfgs.length; i++) {
-                var deviceCfg = deviceCfgs[i];
-                if(null == deviceCfg['type'] || "" == deviceCfg['type'] || null == deviceCfg['token'] || "" == deviceCfg['token'] || null == deviceCfg['ip'] || "" == deviceCfg['ip']) {
-                    continue;
-                }
 
-                switch(deviceCfg['type'])
-                {
-                    case "Switch":
-                        LoadedAccessories.push(new MiRemoteSwitch(this, deviceCfg));
-                        break;
-                    case "Light":
-                        LoadedAccessories.push(new MiRemoteLight(this, deviceCfg));
-                        break;
-                    case "Projector":
-                        LoadedAccessories.push(new MiRemoteProjector(this, deviceCfg));
-                        break;
-                    case "AirConditioner":
-                        LoadedAccessories.push(new MiRemoteAirConditioner(this, deviceCfg));
-                        break;
-                    case "Custom":
-                        LoadedAccessories.push(new MiRemoteCustom(this, deviceCfg));
-                        break;
-                    case "MomentarySwitch":
-                        LoadedAccessories.push(new MiRemoteMomentarySwitch(this, deviceCfg));
-                        break;    
-                    default:
-                        this.log.error("device type: " + deviceCfg['type'] + "Unexist!");
-                        break;
-                }
-
-                
-            }
-            this.log.info("Loaded accessories: " + LoadedAccessories.length);
+        if (deviceCfg['type'] == null || deviceCfg['type'] == ''
+            || deviceCfg['token'] == null || deviceCfg['token'] == ''
+            || deviceCfg['ip'] == null || deviceCfg['ip'] == ''
+        ) {
+            this.log.error('Device configuration incomplete');
+            continue;
         }
-        
 
-        callback(LoadedAccessories);
-}
+        switch (deviceCfg['type']) {
+            case 'Learn':
+                LoadedAccessories.push(new MiRemoteirLearn(this, deviceCfg));
+                break;
+            case 'Switch':
+                LoadedAccessories.push(new MiRemoteSwitch(this, deviceCfg));
+                break;
+            case 'Light':
+                LoadedAccessories.push(new MiRemoteLight(this, deviceCfg));
+                break;
+            case 'Projector':
+                LoadedAccessories.push(new MiRemoteProjector(this, deviceCfg));
+                break;
+            case 'AirConditioner':
+                LoadedAccessories.push(new MiRemoteAirConditioner(this, deviceCfg));
+                break;
+            case 'Custom':
+                LoadedAccessories.push(new MiRemoteCustom(this, deviceCfg));
+                break;
+            case 'MomentarySwitch':
+                LoadedAccessories.push(new MiRemoteMomentarySwitch(this, deviceCfg));
+                break;
+            default:
+                this.log.error("Device type: '" + deviceCfg['type'] + "' does not exist!");
+                break;
+        }
+    }
 
+    this.log.info('Loaded ' + LoadedAccessories.length + ' accessories');
+    callback(LoadedAccessories);
+};
 
 ChuangmiIRPlatform.prototype.getMiioDevice = function(configarray,dthat) {
     var device = "";
