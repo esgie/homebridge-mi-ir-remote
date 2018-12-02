@@ -4,6 +4,7 @@ require('./Devices/MiRemoteCustom');
 require('./Devices/MiRemoteLight');
 require('./Devices/MiRemoteProjector');
 require('./Devices/MiRemoteAirConditioner');
+require('./Devices/MiRemoteFan');
 require('./Devices/MiRemoteMomentarySwitch');
 
 const miio = require('miio');
@@ -101,6 +102,9 @@ ChuangmiIRPlatform.prototype.accessories = function (callback) {
                 break;
             case 'AirConditioner':
                 LoadedAccessories.push(new MiRemoteAirConditioner(this, deviceCfg));
+                break;
+            case 'Fan':
+                LoadedAccessories.push(new MiRemoteFan(this, deviceCfg));
                 break;
             case 'Custom':
                 LoadedAccessories.push(new MiRemoteCustom(this, deviceCfg));

@@ -21,7 +21,8 @@ If you are using Raspberry Pi, please read [Running-HomeBridge-on-a-Raspberry-Pi
 3.Projector  
 4.Airconditioner  
 5.Custom  
-6.MomentarySwitch
+6.MomentarySwitch  
+7.Fan
 
 ##
 U should active MiLearn from Home app then try to learn each command manually.  
@@ -37,6 +38,11 @@ Just grab the string then fill it to config file, everything should be working a
 * interval's unit is second. you can use number like 0.5 if you want to send commands within a second.(I don't suggest you set too much commands in a short time.)
 
 ### MomentarySwitch is a switch which will automaticly turn off after you turn on it (0.3s). It is used for some situation like you want to launch a channel on button.
+
+### Fan settings explanation:
+Only `on` and `off` settings are mandatory. In case you use only these, you will have basic fan with only ON and OFF functions.   
+If your fan supports swing mode, you can set `swing`'s `on` and `off` codes - functionality will appear in Home app.   
+`speed` setting is an array in which you define codes for setting speed (order: ASC). Home app can display speed only in percentage. Therefore if you set 3 codes in here ("xxxxxxx", "yyyyyyy", "zzzzzzz"), then "xxxxxxx" code will be sent at 0-33%, "yyyyyyy" at 34-66% and "zzzzzzz" at 67-100% speed.
 
 ## Installation
 1. Install HomeBridge, please follow it's [README](https://github.com/nfarina/homebridge/blob/master/README.md).   
@@ -109,6 +115,25 @@ npm install -g miio homebridge-mi-ir-remote
                     "16" : "xxx"
                 },
                 "off" : "xxxx"
+            }
+        },{
+            "type": "Fan",
+            "ip": "192.168.31.xx",
+            "token": "xxx",
+            "Name": "IR Fan",
+            "data": {
+                "on" : "xxxx",
+                "off" : "xxxx",
+                "keepstate" : false,
+                "speeds": [
+                    "xxx",
+                    "xxx",
+                    "xxx"
+                ],
+                "swing":{
+                    "on" : "xxx",
+                    "off" : "xxx"
+                }
             }
         },{
             "type": "Custom",
@@ -220,6 +245,8 @@ Or you can try to get Your token from any rootrd android device.
 Details in https://github.com/jghaanstra/com.xiaomi-miio/blob/master/docs/obtain_token.md
 
 ## Version Logs  
+### 0.2.0
+1. Implement Fan with speed settings (optional) and swing mode (optional)
 ### 0.1.1
 1. Implement global ip and token settings in config
 ### 0.1.0
